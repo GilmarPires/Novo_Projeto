@@ -1,1 +1,2 @@
-# Novo_Projeto
+# Projeto de Raspagem de dados do site NBB.BR
+Nesse projeto, fiz uma raspagem de dados do site da NBB (Novo Basquete Brasil) para obter informações sobre as equipes e suas estatísticas. O objetivo é extrair uma tabela de classificação da NBB. Usei a biblioteca rvest para extrair os dados da tabela diretamente do site e, em seguida, manipulei os dados para reorganizá-los conforme as instruções fornecidas. E por último, montei um relatório em R Markdown para exibir a tabela de classificação da NBB, e com isso tenho um relatório atualizado sempre que o código for executado. Esse é apenas um exemplo de como o R pode ser usado para extrair e manipular dados da web e gerar relatórios personalizados.
