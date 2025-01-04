@@ -1,0 +1,74 @@
+# Carregar as bibliotecas
+library(rvest)
+library(dplyr)
+library(stringr)
+library(kableExtra)
+
+# URL do site da NBB
+url <- read_html("https://lnb.com.br/nbb/")
+
+# Extrair a tabela diretamente usando rvest
+tables <- url %>% html_nodes("table")
+
+# Verifique se há tabelas disponíveis e exiba a quantidade encontrada
+cat("Número de tabelas encontradas:", length(tables), "\n")
+
+# Se houver tabelas, extraia a primeira tabela como exemplo
+if (length(tables) > 0) {
+  NBB_table <- tables[[1]] %>% html_table(fill = TRUE)
+  
+  # Atribuir nomes temporários para colunas ausentes ou vazias
+  colnames(NBB_table)[is.na(colnames(NBB_table)) | colnames(NBB_table) == ""] <- paste0("V", seq_along(colnames(NBB_table))[is.na(colnames(NBB_table)) | colnames(NBB_table) == ""])
+  
+  # Remover linhas indesejadas que contenham "\ue037 MAIS ESTATÍSTICAS"
+  NBB_table <- NBB_table %>%
+    filter(!grepl("\ue037 MAIS ESTATÍSTICAS", EQUIPES)) %>%
+    filter(!is.na(EQUIPES))
+  
+  # Extrair apenas as três letras da coluna "EQUIPES"
+  equipes_simplificado <- NBB_table %>%
+    mutate(EQUIPES = str_extract(EQUIPES, "[A-Z]{3}")) %>%
+    filter(!is.na(EQUIPES))
+  
+  # Salvar a coluna SAL da tabela original antes de modificar as colunas
+  SAL_orig <- NBB_table$SAL
+  PON_orig <- NBB_table$PON
+  
+  # Realocar os dados conforme as instruções fornecidas
+  NBB_table <- NBB_table %>%
+    mutate(
+      PON = JOG,
+      JOG = DER,
+      VIT = CASA,
+      DER = FORA,
+      CASA = PRO,
+      FORA = CON,
+      PRO = SAL_orig,
+      CON = ULT,
+      SAL = PON_orig
+    )
+  
+  # Remover as colunas "ULT", "V13" e "V14"
+  NBB_table <- NBB_table %>% select(-ULT, -V13, -V14)
+  
+  # Substituir a coluna "EQUIPES" na tabela original pelas informações da nova tabela
+  NBB_table$EQUIPES <- equipes_simplificado$EQUIPES
+  
+  # Adicionar a coluna de classificação
+  NBB_table <- NBB_table %>%
+    mutate(CLASSIFICAÇÃO = row_number())
+  
+  # Selecionar as colunas na ordem correta
+  NBB_table <- NBB_table %>%
+    select(CLASSIFICAÇÃO, EQUIPES, `AP(%)`, JOG, VIT, DER, CASA, FORA, PRO, CON, SAL, PON)
+} else {
+  print("Nenhuma tabela encontrada na página.")
+}
+
+rm(equipes_simplificado, PON_orig, SAL_orig, url, tables)
+
+# Exibir a tabela usando kableExtra com rolagem
+NBB_table %>%
+  kable(format = "html", table.attr = 'class="table"') %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = F) %>%
+  scroll_box(height = "400px")
